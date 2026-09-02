@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusAid — Emergency Safety Companion</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --cream: #FBF6EE;
+    --cream-soft: #F4EDE0;
+    --ink: #16261F;
+    --ink-soft: #5B6B62;
+    --line: #E4DBC8;
+    --coral: #FF5A4E;
+    --coral-deep: #E8402F;
+    --coral-bg: #FFE7E2;
+    --moss: #4F7A55;
+    --moss-bg: #E3EEDC;
+    --amber: #D98C1F;
+    --amber-bg: #FCEDD0;
+    --peri: #6C6FE0;
+    --peri-bg: #E7E7FC;
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
+    --shadow-card: 0 2px 4px rgba(22,38,31,.04), 0 12px 28px -14px rgba(22,38,31,.14);
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  h1,h2,h3, .display{
+    font-family: 'Fraunces', serif;
+    letter-spacing: -0.015em;
+  }
+  em{ font-style: italic; font-family: 'Fraunces', serif; font-weight: 500; }
+  :focus-visible{ outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+
+  .blob{ position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0; opacity: .55; }
+  .blob-1{ width: 420px; height: 420px; background: var(--amber-bg); top: -140px; right: -120px; }
+  .blob-2{ width: 380px; height: 380px; background: var(--moss-bg); bottom: -160px; left: -140px; }
+  .blob-3{ width: 260px; height: 260px; background: var(--peri-bg); top: 40%; right: -100px; opacity:.4; }
+
+  .app{ max-width: 940px; margin: 0 auto; padding: 28px 20px 70px; position: relative; z-index: 1; }
+
+  header.top{ display:flex; align-items:center; justify-content: space-between; padding: 4px 2px 26px; margin-bottom: 8px; gap: 16px; flex-wrap: wrap; }
+  .brand{ display:flex; align-items:center; gap:13px; }
+  .brand-mark{
+    width: 46px; height: 46px; border-radius: 14px; background: var(--ink);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    box-shadow: 0 4px 12px rgba(22,38,31,.25); transform: rotate(-4deg);
+  }
+  .brand-mark svg{ width:24px; height:24px; }
+  .brand-name{ font-family:'Fraunces'; font-weight:700; font-size: 25px; line-height:1; }
+  .brand-name em{ color: var(--coral); font-weight:600; }
+  .brand-sub{ font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+
+  .status-pill{
+    display:flex; align-items:center; gap:8px; font-size: 13px; color: var(--ink); font-weight:600;
+    background: #fff; padding: 9px 16px 9px 12px; border-radius: 30px; border: 1.5px solid var(--line);
+    cursor: pointer; transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease;
+    box-shadow: var(--shadow-card);
+  }
+  .status-pill:hover{ transform: translateY(-2px); }
+  .status-dot{ width:8px; height:8px; border-radius:50%; background: var(--coral); animation: breathe 2.2s ease-in-out infinite; }
+  .status-dot.connected{ background: var(--moss); }
+  @keyframes breathe{ 0%,100%{ transform: scale(1); opacity:1; } 50%{ transform: scale(1.35); opacity:.65; } }
+
+  .hero-line{ font-size: 15px; color: var(--ink-soft); max-width: 52ch; line-height:1.55; margin: 0 0 26px; }
+
+  #apiKeyModal{ display:none; position:fixed; inset:0; background:rgba(22,38,31,.5); z-index:50; align-items:center; justify-content:center; padding:20px; backdrop-filter: blur(2px); }
+  .modal-card{ background:#fff; border-radius: var(--radius-lg); padding:30px; max-width:440px; width:100%; box-shadow: 0 20px 60px -20px rgba(22,38,31,.4); animation: pop-in .3s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop-in{ from{ opacity:0; transform: scale(.92) translateY(8px); } to{ opacity:1; transform: scale(1) translateY(0); } }
+  .modal-card h2{ margin: 0 0 8px; font-size: 21px; }
+  .modal-card p{ color: var(--ink-soft); font-size: 13.5px; line-height:1.55; margin: 0 0 16px; }
+  .modal-card a{ color: var(--coral); font-weight:600; }
+  .modal-card input{ width:100%; padding: 13px 15px; border:1.5px solid var(--line); border-radius: var(--radius-sm); font-size:14px; margin-bottom: 18px; font-family:'Inter'; background: var(--cream-soft); }
+  .modal-card input:focus{ border-color: var(--ink); background: #fff; }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
+
+  .tabs{ display:flex; gap: 5px; margin-bottom: 24px; background: var(--cream-soft); padding: 5px; border-radius: 999px; width: fit-content; max-width:100%; overflow-x:auto; border: 1.5px solid var(--line); }
+  .tab{ font-family:'Inter'; font-weight:600; font-size: 14px; padding: 10px 18px; border-radius: 999px; border:none; cursor:pointer; background: transparent; color: var(--ink-soft); white-space:nowrap; transition: all .2s cubic-bezier(.34,1.56,.64,1); }
+  .tab.active{ background: var(--ink); color: #fff; box-shadow: 0 4px 10px rgba(22,38,31,.2); }
+  .tab:hover:not(.active){ color: var(--ink); background: rgba(22,38,31,.06); }
+
+  .panel{ background: #fff; border: 1.5px solid var(--line); border-radius: var(--radius-lg); padding: 30px; box-shadow: var(--shadow-card); }
+  .view{ display:none; }
+  .view.active{ display:block; animation: fade-up .35s ease; }
+  @keyframes fade-up{ from{ opacity:0; transform: translateY(10px); } to{ opacity:1; transform: translateY(0); } }
+
+  .eyebrow-icon{ display:inline-flex; align-items:center; justify-content:center; width: 42px; height:42px; border-radius: 13px; margin-bottom: 14px; font-size: 19px; }
+  .panel h2{ font-size: 24px; margin: 0 0 8px; font-weight: 600; }
+  .panel .lede{ color: var(--ink-soft); font-size: 14.5px; margin: 0 0 22px; max-width: 58ch; line-height:1.55; }
+
+  .input-row{ display:flex; gap:12px; margin-bottom: 14px; flex-wrap:wrap; }
+  textarea{ flex: 1 1 260px; min-height: 92px; font-family:'Inter'; font-size: 15px; color: var(--ink); border: 1.5px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; resize: vertical; background: var(--cream-soft); transition: border-color .15s ease, background .15s ease; }
+  textarea:focus{ border-color: var(--ink); background: #fff; }
+  textarea::placeholder{ color: #A9A18C; }
+
+  .upload-box{ flex: 0 0 156px; border: 2px dashed var(--line); border-radius: var(--radius-md); display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 7px; cursor:pointer; text-align:center; padding: 10px; color: var(--ink-soft); font-size: 12.5px; font-weight:600; background: var(--cream-soft); transition: all .18s ease; }
+  .upload-box:hover{ border-color: var(--coral); color: var(--coral-deep); background: var(--coral-bg); transform: translateY(-2px); }
+  .upload-box svg{ width:22px; height:22px; }
+  .upload-box.has-image{ padding:0; overflow:hidden; border-style:solid; }
+  .upload-box.has-image img{ width:100%; height:100%; object-fit:cover; display:block; }
+  #fileInput{ display:none; }
+
+  .action-row{ display:flex; align-items:center; gap: 12px; flex-wrap:wrap; }
+  .btn{ font-family:'Inter'; font-weight:700; font-size: 14.5px; padding: 13px 24px; border-radius: 999px; border:none; cursor:pointer; background: var(--coral); color: #fff; box-shadow: 0 6px 16px -4px rgba(255,90,78,.5); transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease, background .15s ease; }
+  .btn:hover{ background: var(--coral-deep); transform: translateY(-2px); box-shadow: 0 8px 20px -4px rgba(255,90,78,.6); }
+  .btn:active{ transform: scale(0.96) translateY(0); }
+  .btn:disabled{ background: #D6CFBE; box-shadow:none; cursor:not-allowed; transform:none; }
+  .btn-ghost{ background: transparent; color: var(--ink-soft); border: 1.5px solid var(--line); font-weight:600; font-size: 13.5px; padding: 11px 18px; border-radius: 999px; cursor: pointer; transition: all .15s ease; }
+  .btn-ghost:hover{ background: var(--cream-soft); color: var(--ink); border-color: var(--ink); }
+
+  .examples{ display:flex; gap:9px; flex-wrap:wrap; margin-top:16px; }
+  .example-chip{ font-size: 12.5px; font-weight:600; color: var(--ink-soft); background: var(--cream-soft); border: 1.5px solid var(--line); border-radius: 20px; padding: 7px 14px; cursor:pointer; transition: all .15s ease; }
+  .example-chip:hover{ background: var(--amber-bg); color: var(--amber); border-color: var(--amber); transform: translateY(-1px); }
+
+  .result{ margin-top: 26px; padding-top: 24px; border-top: 1.5px dashed var(--line); animation: fade-up .4s ease; }
+  .severity-banner{ display:flex; align-items:center; gap: 12px; padding: 14px 17px; border-radius: var(--radius-md); font-weight:700; font-size: 14.5px; margin-bottom: 20px; }
+  .severity-icon{ width: 34px; height:34px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 16px; flex-shrink:0; }
+  .severity-banner.urgent{ background: var(--coral-bg); color: var(--coral-deep); }
+  .severity-banner.urgent .severity-icon{ background: var(--coral); color:#fff; animation: pulse-ring 1.4s ease-out infinite; }
+  .severity-banner.moderate{ background: var(--amber-bg); color: var(--amber); }
+  .severity-banner.moderate .severity-icon{ background: var(--amber); color:#fff; }
+  .severity-banner.mild{ background: var(--moss-bg); color: var(--moss); }
+  .severity-banner.mild .severity-icon{ background: var(--moss); color:#fff; }
+  @keyframes pulse-ring{ 0%{ box-shadow: 0 0 0 0 rgba(255,90,78,.5); } 100%{ box-shadow: 0 0 0 10px rgba(255,90,78,0); } }
+
+  .protocol-title{ font-family:'Fraunces'; font-size: 19px; font-weight:600; margin: 0 0 16px; }
+  .steps{ list-style:none; margin:0; padding:0; counter-reset: step; display:flex; flex-direction:column; gap:10px; }
+  .steps li{ counter-increment: step; display:flex; gap: 14px; align-items:flex-start; padding: 14px 16px; border-radius: var(--radius-md); background: var(--cream-soft); font-size: 15px; line-height:1.55; opacity: 0; transform: translateX(-8px); animation: step-in .4s ease forwards; }
+  .steps li:nth-child(1){ animation-delay: .05s; }
+  .steps li:nth-child(2){ animation-delay: .12s; }
+  .steps li:nth-child(3){ animation-delay: .19s; }
+  .steps li:nth-child(4){ animation-delay: .26s; }
+  .steps li:nth-child(5){ animation-delay: .33s; }
+  .steps li:nth-child(6){ animation-delay: .40s; }
+  .steps li:nth-child(7){ animation-delay: .47s; }
+  @keyframes step-in{ to{ opacity:1; transform: translateX(0); } }
+  .steps li::before{ content: counter(step); flex-shrink:0; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color:#fff; font-family:'Fraunces'; font-weight:600; font-size:13.5px; display:flex; align-items:center; justify-content:center; }
+
+  .disclaimer{ margin-top: 20px; font-size: 12.5px; color: var(--ink-soft); background: var(--peri-bg); border-radius: var(--radius-sm); padding: 12px 15px; line-height:1.55; display:flex; gap:8px; align-items:flex-start; }
+
+  .alert-cta{ margin-top: 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .btn-urgent{ background: var(--coral); }
+
+  .loading{ display:flex; align-items:center; gap:11px; color: var(--ink-soft); font-size:14px; padding: 10px 0; font-weight:500; }
+  .spinner{ width:18px; height:18px; border-radius:50%; border: 2.5px solid var(--line); border-top-color: var(--coral); animation: spin .7s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .lang-grid{ display:flex; gap:9px; flex-wrap:wrap; margin-bottom: 18px; }
+  .lang-btn{ font-size: 13px; font-weight:600; padding: 9px 16px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--cream-soft); color: var(--ink-soft); cursor:pointer; transition: all .15s cubic-bezier(.34,1.56,.64,1); }
+  .lang-btn.active{ background: var(--peri); color:#fff; border-color: var(--peri); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(108,111,224,.35); }
+  .lang-btn:hover:not(.active){ border-color: var(--peri); color: var(--peri); }
+  .translate-output{ margin-top: 20px; padding: 22px; background: var(--peri-bg); border-radius: var(--radius-md); font-size: 18px; line-height:1.6; min-height: 30px; font-family:'Fraunces'; font-weight:500; animation: fade-up .35s ease; }
+  .translate-output .orig{ font-size: 13px; color: var(--ink-soft); margin-top:12px; font-family:'Inter'; font-style:normal; font-weight:400; }
+
+  .contact-card{ display:flex; align-items:center; justify-content:space-between; padding: 15px 18px; border: 1.5px solid var(--line); border-radius: var(--radius-md); margin-bottom: 11px; transition: all .18s ease; background: #fff; }
+  .contact-card:hover{ border-color: var(--ink); transform: translateX(3px); box-shadow: var(--shadow-card); }
+  .contact-info{ display:flex; align-items:center; gap: 13px; }
+  .avatar{ width: 42px; height:42px; border-radius:14px; background: var(--moss-bg); color:var(--moss); display:flex; align-items:center; justify-content:center; font-weight:700; font-family:'Fraunces'; font-size:15px; transform: rotate(-3deg); }
+  .contact-name{ font-weight:600; font-size:14.5px; }
+  .contact-role{ font-size:12.5px; color: var(--ink-soft); margin-top:1px; }
+  .sent-log{ margin-top:26px; }
+  .sent-log h2{ font-size:16px; margin-bottom:12px; }
+  .log-entry{ display:flex; gap:11px; padding: 12px 14px; margin-bottom:8px; font-size:13.5px; background: var(--moss-bg); border-radius: var(--radius-sm); align-items:center; animation: log-pop .4s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes log-pop{ from{ opacity:0; transform: scale(.9) translateY(-6px); } to{ opacity:1; transform: scale(1) translateY(0); } }
+  .log-time{ color: var(--moss); font-weight:600; flex-shrink:0; width:66px; font-size:12px; }
+  .empty-state{ color: var(--ink-soft); font-size:13.5px; padding: 20px; text-align:center; background: var(--cream-soft); border-radius: var(--radius-md); }
+
+  footer{ text-align:center; margin-top: 36px; font-size:12px; color: var(--ink-soft); position:relative; z-index:1; }
+
+  .confetti-piece{ position: fixed; top: -10px; border-radius: 2px; z-index: 100; pointer-events:none; animation: confetti-fall linear forwards; }
+  @keyframes confetti-fall{ to{ transform: translateY(105vh) rotate(540deg); opacity: 0; } }
+
+  @media (max-width: 560px){
+    .panel{ padding: 22px; }
+    .input-row{ flex-direction:column; }
+    .upload-box{ flex: 0 0 90px; }
+    .brand-name{ font-size: 21px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 8v6M9 11h6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Campus<em>Aid</em></div>
+        <div class="brand-sub">your calm-headed safety companion 🌿</div>
+      </div>
+    </div>
+    <button class="status-pill" id="apiKeyPill"><span class="status-dot" id="statusDot"></span><span id="statusText">Add Gemini API key</span></button>
+  </header>
+
+  <p class="hero-line">Tell me what's going on — with words or a photo — and I'll help you figure out what to do next, translate a warning, or get someone reliable on the way.</p>
+
+  <div id="apiKeyModal">
+    <div class="modal-card">
+      <h2>Connect Gemini ✨</h2>
+      <p>Paste a free Gemini API key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. It's stored only in your browser, nowhere else.</p>
+      <input type="password" id="apiKeyInput" placeholder="AIza...">
+      <div class="modal-actions">
+        <button class="btn-ghost" id="apiKeyCancel">Cancel</button>
+        <button class="btn" id="apiKeySave">Save key</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="triage">🩹 Report an Issue</button>
+    <button class="tab" data-view="translate">🌐 Translate Warning</button>
+    <button class="tab" data-view="contacts">📣 Emergency Contacts</button>
+  </nav>
+
+  <section class="panel view active" id="view-triage">
+    <div class="eyebrow-icon" style="background:var(--coral-bg);">🩹</div>
+    <h2>What's happening?</h2>
+    <p class="lede">Describe the situation, or attach a photo. I'll assess how urgent it is and walk you through exactly what to do, one step at a time.</p>
+
+    <div class="input-row">
+      <textarea id="triageText" placeholder="e.g. My friend cut her hand on broken glass, it's bleeding a lot..."></textarea>
+      <label class="upload-box" id="uploadBox" for="fileInput">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>
+        <span>Add photo</span>
+      </label>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="action-row">
+      <button class="btn" id="assessBtn">Get help now →</button>
+      <button class="btn-ghost" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="examples">
+      <span class="example-chip" data-example="Someone just fainted in the library, they're breathing but not responding to their name.">😵 Fainting</span>
+      <span class="example-chip" data-example="I smell gas near the chemistry lab on the 2nd floor.">💨 Gas leak</span>
+      <span class="example-chip" data-example="Twisted my ankle badly on the stairs, it's swelling fast.">🦶 Sprained ankle</span>
+      <span class="example-chip" data-example="Someone is having what looks like a seizure on the quad.">⚡ Seizure</span>
+    </div>
+
+    <div id="resultArea"></div>
+  </section>
+
+  <section class="panel view" id="view-translate">
+    <div class="eyebrow-icon" style="background:var(--peri-bg);">🌐</div>
+    <h2>Translate a safety warning</h2>
+    <p class="lede">Paste warning text, or describe a sign you're looking at. Pick a language for an instant, plain-spoken translation.</p>
+
+    <textarea id="translateText" style="width:100%; margin-bottom:18px;" placeholder="e.g. Caution: wet floor, do not enter — or describe a sign you see"></textarea>
+
+    <div class="lang-grid" id="langGrid">
+      <button class="lang-btn active" data-lang="Spanish">Spanish</button>
+      <button class="lang-btn" data-lang="Mandarin Chinese">Mandarin</button>
+      <button class="lang-btn" data-lang="Hindi">Hindi</button>
+      <button class="lang-btn" data-lang="Arabic">Arabic</button>
+      <button class="lang-btn" data-lang="French">French</button>
+      <button class="lang-btn" data-lang="Tagalog">Tagalog</button>
+    </div>
+
+    <button class="btn" id="translateBtn">Translate →</button>
+    <div id="translateResult"></div>
+  </section>
+
+  <section class="panel view" id="view-contacts">
+    <div class="eyebrow-icon" style="background:var(--moss-bg);">📣</div>
+    <h2>Designated emergency contacts</h2>
+    <p class="lede">When you report an urgent issue, I can alert these contacts automatically with your situation and location.</p>
+
+    <div class="contact-card">
+      <div class="contact-info">
+        <div class="avatar" style="background:var(--coral-bg); color:var(--coral-deep);">🚑</div>
+        <div><div class="contact-name">Ambulance — 108</div><div class="contact-role">National ambulance helpline · 24/7</div></div>
+      </div>
+      <button class="btn-ghost" onclick="sendAlert('Ambulance (108)', true)">Alert now</button>
+    </div>
+    <div class="contact-card">
+      <div class="contact-info">
+        <div class="avatar">CS</div>
+        <div><div class="contact-name">Campus Security</div><div class="contact-role">On-duty dispatch · 24/7</div></div>
+      </div>
+      <button class="btn-ghost" onclick="sendAlert('Campus Security', true)">Alert now</button>
+    </div>
+    <div class="contact-card">
+      <div class="contact-info">
+        <div class="avatar" style="background:var(--amber-bg); color:var(--amber);">RA</div>
+        <div><div class="contact-name">Resident Advisor — Priya N.</div><div class="contact-role">Hall coordinator</div></div>
+      </div>
+      <button class="btn-ghost" onclick="sendAlert('Priya N.', false)">Alert now</button>
+    </div>
+    <div class="contact-card">
+      <div class="contact-info">
+        <div class="avatar" style="background:var(--peri-bg); color:var(--peri);">💜</div>
+        <div><div class="contact-name">Emergency Contact — Mom</div><div class="contact-role">Personal contact</div></div>
+      </div>
+      <button class="btn-ghost" onclick="sendAlert('Mom', false)">Alert now</button>
+    </div>
+
+    <div class="sent-log">
+      <h2>Alert log</h2>
+      <div id="logList"><div class="empty-state" id="emptyLog">No alerts sent yet — you're all clear 🌱</div></div>
+    </div>
+  </section>
+
+  <footer>Built for PromptWars × WIE-IEEE — Build with AI · Assistive Health &amp; Emergency Safety</footer>
+</div>
+
+<script>
+  let GEMINI_KEY = localStorage.getItem('campusaid_gemini_key') || '';
+  const apiKeyModal = document.getElementById('apiKeyModal');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  function refreshKeyStatus(){
+    if(GEMINI_KEY){
+      statusDot.classList.add('connected');
+      statusText.textContent = 'Gemini connected';
+    }else{
+      statusDot.classList.remove('connected');
+      statusText.textContent = 'Add Gemini API key';
+    }
+  }
+  refreshKeyStatus();
+
+  document.getElementById('apiKeyPill').addEventListener('click', () => {
+    document.getElementById('apiKeyInput').value = GEMINI_KEY;
+    apiKeyModal.style.display = 'flex';
+  });
+  document.getElementById('apiKeyCancel').addEventListener('click', () => apiKeyModal.style.display = 'none');
+  document.getElementById('apiKeySave').addEventListener('click', () => {
+    GEMINI_KEY = document.getElementById('apiKeyInput').value.trim();
+    localStorage.setItem('campusaid_gemini_key', GEMINI_KEY);
+    localStorage.setItem('campusaid_gemini_key_user_set', 'true');
+    refreshKeyStatus();
+    apiKeyModal.style.display = 'none';
+  });
+
+  async function callGemini(systemPrompt, userParts, maxTokens){
+    if(!GEMINI_KEY){
+      apiKeyModal.style.display = 'flex';
+      throw new Error('No API key set');
+    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`;
+    const body = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: userParts }],
+      generationConfig: { maxOutputTokens: maxTokens || 800, temperature: 0.4 }
+    };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY },
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){
+      const errText = await res.text();
+      throw new Error('Gemini error: ' + errText);
+    }
+    const data = await res.json();
+    return data.candidates[0].content.parts.map(p => p.text || "").join("").trim();
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    });
+  });
+
+  let uploadedImageBase64 = null;
+  let uploadedImageMedia = null;
+  const fileInput = document.getElementById('fileInput');
+  const uploadBox = document.getElementById('uploadBox');
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if(!file) return;
+    uploadedImageMedia = file.type;
+    const reader = new FileReader();
+    reader.onload = () => {
+      uploadedImageBase64 = reader.result.split(',')[1];
+      uploadBox.classList.add('has-image');
+      uploadBox.innerHTML = `<img src="${reader.result}" alt="Uploaded photo">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('triageText').value = '';
+    uploadedImageBase64 = null;
+    uploadBox.classList.remove('has-image');
+    uploadBox.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg><span>Add photo</span>`;
+    document.getElementById('resultArea').innerHTML = '';
+  });
+
+  document.querySelectorAll('.example-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById('triageText').value = chip.dataset.example;
+    });
+  });
+
+  // ---- Offline demo-mode fallback (used only if the live Gemini call fails) ----
+  const FALLBACK_TRIAGE = [
+    { match: /faint|not responding|unresponsive|passed out/i, data: {
+      severity: "urgent", severity_label: "Check responsiveness — act now",
+      protocol_title: "Fainting / Unresponsive Person",
+      steps: [
+        "Check if they respond to voice or a gentle shoulder tap.",
+        "If unresponsive, call 108 (ambulance) or 112 immediately.",
+        "Lay them on their back and raise their legs slightly.",
+        "Loosen tight clothing around neck and waist.",
+        "Check breathing — if absent, begin CPR if trained.",
+        "Stay with them until help arrives; do not leave alone."
+      ], call_emergency_number: true } },
+    { match: /gas|smell|leak|fumes/i, data: {
+      severity: "urgent", severity_label: "Evacuate and alert emergency services",
+      protocol_title: "Suspected Gas Leak",
+      steps: [
+        "Do not switch on/off any electrical switches nearby.",
+        "Evacuate the area immediately and move upwind.",
+        "Call 112 (national emergency) and campus security right away.",
+        "Warn others nearby to leave the area calmly.",
+        "Do not re-enter until officials confirm it's safe."
+      ], call_emergency_number: true } },
+    { match: /ankle|sprain|swell|twist/i, data: {
+      severity: "moderate", severity_label: "First aid needed, not life-threatening",
+      protocol_title: "Sprained Ankle",
+      steps: [
+        "Help them sit down and stay off the injured foot.",
+        "Apply an ice pack wrapped in cloth for 15-20 minutes.",
+        "Elevate the ankle above heart level if possible.",
+        "Wrap gently with a compression bandage if available.",
+        "See a campus health center if swelling or pain worsens."
+      ], call_emergency_number: false } },
+    { match: /seizure|convuls|shaking/i, data: {
+      severity: "urgent", severity_label: "Call emergency services now",
+      protocol_title: "Seizure Response",
+      steps: [
+        "Call 108 (ambulance) or 112 immediately.",
+        "Clear the area of hard or sharp objects nearby.",
+        "Gently cushion their head; do not restrain their movements.",
+        "Do not put anything in their mouth.",
+        "Time the seizure; turn them on their side once it stops.",
+        "Stay with them until they're fully alert or help arrives."
+      ], call_emergency_number: true } }
+  ];
+
+  function getFallbackTriage(text){
+    const hit = FALLBACK_TRIAGE.find(f => f.match.test(text || ""));
+    return hit ? hit.data : {
+      severity: "moderate", severity_label: "Demo mode — general first-aid guidance",
+      protocol_title: "General Situation Response",
+      steps: [
+        "Assess the person calmly and check for immediate danger.",
+        "Call 108 (ambulance) or 112 if anything seems serious.",
+        "Keep the person calm, comfortable, and still if injured.",
+        "Alert campus security or a nearby staff member.",
+        "Stay with them until help arrives."
+      ], call_emergency_number: false
+    };
+  }
+
+  const FALLBACK_TRANSLATIONS = {
+    Spanish: { default: "Precaución: piso mojado, no entre." },
+    "Mandarin Chinese": { default: "注意：地面湿滑，请勿进入。" },
+    Hindi: { default: "सावधान: फर्श गीला है, कृपया प्रवेश न करें।" },
+    Arabic: { default: "تحذير: الأرضية مبللة، يرجى عدم الدخول." },
+    French: { default: "Attention : sol mouillé, ne pas entrer." },
+    Tagalog: { default: "Babala: basang sahig, huwag pumasok." }
+  };
+
+  document.getElementById('assessBtn').addEventListener('click', async () => {
+    const text = document.getElementById('triageText').value.trim();
+    if(!text && !uploadedImageBase64){
+      alert('Describe the situation or add a photo first.');
+      return;
+    }
+    const resultArea = document.getElementById('resultArea');
+    const btn = document.getElementById('assessBtn');
+    btn.disabled = true;
+    resultArea.innerHTML = `<div class="loading" style="margin-top:22px;"><div class="spinner"></div>Assessing the situation...</div>`;
+
+    const userParts = [];
+    userParts.push({ text: `Situation: ${text || "(see attached photo)"}` });
+    if(uploadedImageBase64){
+      userParts.push({ inline_data: { mime_type: uploadedImageMedia, data: uploadedImageBase64 } });
+    }
+
+    const systemPrompt = `You are CampusAid, a campus emergency first-aid and safety triage assistant for a campus in India. You are NOT a replacement for professional medical care — always make that clear. When a step involves calling for professional help, reference India's emergency numbers: 112 (national emergency helpline) or 108 (ambulance) — never reference 911.
+Given a description and/or photo of a situation, respond ONLY with raw JSON (no markdown fences, no preamble, no code block) in this exact shape:
+{
+  "severity": "urgent" | "moderate" | "mild",
+  "severity_label": "short human label, e.g. 'Call emergency services now'",
+  "protocol_title": "short title for the first-aid protocol",
+  "steps": ["step 1 instruction", "step 2 instruction", ...],
+  "call_emergency_number": true | false
+}
+Rules:
+- severity "urgent" = life-threatening, needs professional emergency services immediately (severe bleeding, unresponsive, chest pain, seizure, gas leak, fire, etc.)
+- severity "moderate" = needs prompt attention/first aid but not immediately life-threatening (sprains, minor cuts, fainting with recovery)
+- severity "mild" = minor issue, self-care sufficient
+- steps should be 4-7 short, clear, numbered-style actions in plain language, ordered by priority
+- If a photo is provided, factor in what's visible (wound appearance, hazard, environment)
+- Keep each step under 20 words`;
+
+    try{
+      let raw = await callGemini(systemPrompt, userParts, 1000);
+      raw = raw.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(raw);
+      renderResult(parsed);
+    }catch(err){
+      console.error(err);
+      const fallback = getFallbackTriage(text);
+      renderResult(fallback, true);
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  function renderResult(data, isFallback){
+    const resultArea = document.getElementById('resultArea');
+    const stepsHtml = data.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    const icon = severityIcon(data.severity);
+    const alertBtn = data.severity === 'urgent'
+      ? `<button class="btn btn-urgent" onclick="sendAlert('Campus Security', true)">🚨 Alert Campus Security</button>`
+      : `<button class="btn-ghost" onclick="sendAlert('Campus Security', false)">Notify a contact anyway</button>`;
+    const demoBadge = isFallback
+      ? `<div style="font-size:12px; font-weight:700; color:var(--amber); background:var(--amber-bg); display:inline-block; padding:5px 12px; border-radius:20px; margin-bottom:14px;">⚡ Demo mode — offline sample response</div>`
+      : '';
+
+    resultArea.innerHTML = `
+      <div class="result">
+        ${demoBadge}
+        <div class="severity-banner ${data.severity}">
+          <span class="severity-icon">${icon}</span> ${escapeHtml(data.severity_label)}
+        </div>
+        <div class="protocol-title">${escapeHtml(data.protocol_title)}</div>
+        <ol class="steps">${stepsHtml}</ol>
+        <div class="disclaimer">💡 This guidance is not a substitute for professional medical care. If the situation is life-threatening, call <strong>112</strong> (India's national emergency number) or <strong>108</strong> for an ambulance immediately.</div>
+        <div class="alert-cta">${alertBtn}</div>
+      </div>
+    `;
+  }
+
+  function severityIcon(sev){
+    if(sev === 'urgent') return '!';
+    if(sev === 'moderate') return '●';
+    return '✓';
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  let selectedLang = 'Spanish';
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedLang = btn.dataset.lang;
+    });
+  });
+
+  document.getElementById('translateBtn').addEventListener('click', async () => {
+    const text = document.getElementById('translateText').value.trim();
+    const out = document.getElementById('translateResult');
+    if(!text){ alert('Enter a safety message to translate.'); return; }
+    out.innerHTML = `<div class="loading" style="margin-top:18px;"><div class="spinner"></div>Translating to ${selectedLang}...</div>`;
+
+    try{
+      const sys = `You translate campus safety warnings into clear, plain ${selectedLang}, appropriate for signage or a spoken announcement. Respond with ONLY the translation, no explanation, no quotes.`;
+      const translated = await callGemini(sys, [{ text }], 300);
+      out.innerHTML = `<div class="translate-output">${escapeHtml(translated)}<div class="orig">Original: "${escapeHtml(text)}"</div></div>`;
+    }catch(err){
+      console.error(err);
+      const fallbackText = (FALLBACK_TRANSLATIONS[selectedLang] && FALLBACK_TRANSLATIONS[selectedLang].default) || null;
+      if(fallbackText){
+        out.innerHTML = `<div style="font-size:12px; font-weight:700; color:var(--amber); background:var(--amber-bg); display:inline-block; padding:5px 12px; border-radius:20px; margin-top:16px;">⚡ Demo mode — offline sample translation</div>
+          <div class="translate-output">${escapeHtml(fallbackText)}<div class="orig">Original: "${escapeHtml(text)}"</div></div>`;
+      } else {
+        out.innerHTML = `<div class="disclaimer" style="margin-top:18px; background:var(--coral-bg); color:var(--coral-deep);">Translation failed. Please try again.</div>`;
+      }
+    }
+  });
+
+  function sendAlert(name, urgent){
+    const logList = document.getElementById('logList');
+    const emptyLog = document.getElementById('emptyLog');
+    if(emptyLog) emptyLog.remove();
+    const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<div class="log-time">${time}</div><div>${urgent ? '🚨' : '✅'} Alert sent to <strong>${name}</strong> with your situation summary and last known location.</div>`;
+    logList.prepend(entry);
+
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelector('.tab[data-view="contacts"]').classList.add('active');
+    document.getElementById('view-contacts').classList.add('active');
+
+    launchConfetti();
+  }
+
+  function launchConfetti(){
+    const colors = ['#FF5A4E', '#F5B942', '#4F7A55', '#6C6FE0'];
+    for(let i = 0; i < 26; i++){
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      const size = 6 + Math.random() * 6;
+      piece.style.width = size + 'px';
+      piece.style.height = size * 0.4 + 'px';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (1.8 + Math.random() * 1.2) + 's';
+      piece.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 3200);
+    }
+  }
+</script>
+</body>
+</html>
